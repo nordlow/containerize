@@ -8,14 +8,17 @@ import shutil
 import stat
 import subprocess
 import tempfile
+import fileinput
 import logging
 
 
 _SUCCESS = 0                    # default success exit status
 _FAILURE = 1                    # default failure exit status
 
-# default hash type name
-_DEFAULT_HASH_TYPE_NAME = 'md5'  # either md5, sha1, sha256, sha512, etc
+_DEFAULT_HASH_NAME = 'md5'  # either md5, sha1, sha256, sha512, etc
+_DEFAULT_CACHE_DIR = os.path.join(os.path.expanduser('~'),
+                                  '.cache',
+                                  __name__)
 
 
 # Input file (regular or directory) path.
@@ -93,10 +96,12 @@ def _atomic_copyfile(src, dst, overwrite, logger):
             # exception on Windows if the file exists
             os.replace(src=tmp_h.name,
                        dst=dst)
+            return True
         else:
             if not os.path.exists(dst):
                 os.rename(src=tmp_h.name,
                           dst=dst)
+                return True
     except:
         logger.warning("Failed to copy file {} to {}".format(src, dst))
         pass
@@ -105,21 +110,21 @@ def _atomic_copyfile(src, dst, overwrite, logger):
             os.remove(tmp_h.name)
         except:
             pass
+    return False
 
 
 def _file_hexdigest(file_name,
-                    hash_type_name):
-    chash = hashlib.new(name=hash_type_name)
+                    hash_name):
+    chash = hashlib.new(name=hash_name)
     with open(file_name, 'rb') as out_h:
         chash.update(out_h.read())
     return chash.hexdigest()
 
 
 def _try_store_into_cache(out_files,
-                          cache_out_dir,
                           cache_manifest_file,
                           cache_artifacts_dir,
-                          hash_type_name,
+                          hash_name,
                           logger):
     try:
         with open(cache_manifest_file, 'w') as manifest_h:
@@ -127,31 +132,24 @@ def _try_store_into_cache(out_files,
                 assert not out_file.is_absolute()
                 out_file_name = str(out_file)  # just the name
 
-                if True:        # TODO remove when outputs are read from `cache_manifest_file`
-                    cache_out_file = os.path.join(cache_out_dir,
-                                                  out_file_name)
-                    os.makedirs(os.path.dirname(cache_out_file), exist_ok=True)
-                    # must not use link here
-                    _atomic_copyfile(out_file_name,
-                                     cache_out_file,
-                                     overwrite=False,
-                                     logger=logger)
-
                 hexdig = _file_hexdigest(file_name=out_file_name,
-                                         hash_type_name=hash_type_name)
+                                         hash_name=hash_name)
 
                 cache_artifact_file = os.path.join(cache_artifacts_dir,
-                                                   hexdig + os.path.splitext(out_file_name)[1])
+                                                   hexdig)  # TODO use + os.path.splitext(out_file_name)[1]
+
                 # must not use link here
-                _atomic_copyfile(out_file_name,
-                                 cache_artifact_file,
-                                 overwrite=False,
-                                 logger=logger)
+                if _atomic_copyfile(src=out_file_name,
+                                    dst=cache_artifact_file,
+                                    overwrite=False,  # keep existing if file was just written to
+                                    logger=logger):
+                    logger.info('Stored {} with contents {} into cache'.format(out_file_name, hexdig))
+                else:
+                    logger.info('Skipped storing {} with contents {} already in cache'.format(out_file_name, hexdig))
 
                 # write entry in manifest file
                 manifest_h.write(hexdig + ' ' + out_file_name + '\n')
 
-                logger.info('Stored {} with contents {} into cache'.format(out_file_name, hexdig))
         return True
     except FileNotFoundError as exc:
         logger.warning('Could not store some of {} into cache, reason: {}'
@@ -161,20 +159,24 @@ def _try_store_into_cache(out_files,
 
 def _try_load_from_cache(cache_out_dir,
                          out_files,
-                         hash_type_name,
+                         hash_name,
                          logger):
     try:
         for out_file in out_files:
             assert isinstance(out_file, OutFilePath)
-            out_file = str(out_file)
-            assert not os.path.isabs(out_file)
+            assert not out_file.is_absolute()
+
+            out_file_name = str(out_file)
+
+            print('TODO lookup hash_name and hash of {} in .manifest and use it to copy as src argument:'.format(out_file_name))
+
             # must not use link here
-            _atomic_copyfile(os.path.join(cache_out_dir,
-                                          out_file),
-                             out_file,
-                             overwrite=True,
-                             logger=logger)
-            logger.info('Loaded {} from cache'.format(out_file))
+            if _atomic_copyfile(src=os.path.join(cache_out_dir,
+                                                 out_file_name),
+                                dst=out_file_name,
+                                overwrite=True,
+                                logger=logger):
+                logger.info('Loaded {} from cache'.format(out_file_name))
         return True
     except FileNotFoundError as exc:
         pass
@@ -227,14 +229,28 @@ def create_out_dirs(out_files,
             os.makedirs(os.path.dirname(box_out_file), exist_ok=True)  # pre-create directory
 
 
+def _strip_prefix(text, prefix):
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return text
+
+
+def _strip_from_out_file_contents(out_files, prefix):
+    with fileinput.input(files=map(str, out_files),
+                         inplace=True, backup='.bak') as f:
+        for line in f:
+            print(_strip_prefix(line, prefix), end='')
+
+
 def isolated_call(typed_args,
                   typed_env,
-                  extra_inputs,
-                  cache_dir,
+                  extra_inputs=None,
+                  cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
-                  hash_type_name=_DEFAULT_HASH_TYPE_NAME,
+                  hash_name=_DEFAULT_HASH_NAME,
                   shell=False,
-                  timeout=None):
+                  timeout=None,
+                  strip_box_in_dir_prefix=False):
 
     work_dir = os.getcwd()
 
@@ -262,9 +278,9 @@ def isolated_call(typed_args,
 
     top_logger.addHandler(ch)
 
-    load_from_cache = False     # for debugging purpose
+    load_from_cache = True      # for debugging purpose
 
-    chash = hashlib.new(name=hash_type_name)
+    chash = hashlib.new(name=hash_name)
 
     in_files = set()
     out_files = set()
@@ -363,13 +379,13 @@ def isolated_call(typed_args,
         cache_manifest_file = os.path.join(cache_prefix_dir,
                                            hexdig + '.manifest')
 
-        cache_artifacts_dir = os.path.join(cache_dir, 'artifacts')  # this could be made a common parameter
+        cache_artifacts_dir = os.path.join(cache_dir, 'artifacts', hash_name)  # this could be made a common parameter
         os.makedirs(cache_artifacts_dir, exist_ok=True)
 
         if load_from_cache:
             if _try_load_from_cache(cache_out_dir=cache_out_dir,
                                     out_files=out_files,
-                                    hash_type_name=hash_type_name,
+                                    hash_name=hash_name,
                                     logger=top_logger):
                 return _SUCCESS
 
@@ -412,13 +428,20 @@ def isolated_call(typed_args,
         # handle result
         if exit_status == _SUCCESS:
             os.chdir(box_out_dir_abspath)  # enter sandbox output
+
+            # TODO merge these three processing of out_files
+
+            if strip_box_in_dir_prefix:
+                _strip_from_out_file_contents(out_files=out_files,
+                                              prefix=box_in_dir_abspath + os.sep)
+
             if use_caching:
                 _try_store_into_cache(out_files=out_files,
-                                      cache_out_dir=cache_out_dir,
                                       cache_manifest_file=cache_manifest_file,
                                       cache_artifacts_dir=cache_artifacts_dir,
-                                      hash_type_name=hash_type_name,
+                                      hash_name=hash_name,
                                       logger=top_logger)
+
             copy_output_from_box(out_files=out_files,
                                  work_dir=work_dir,
                                  logger=top_logger)
