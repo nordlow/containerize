@@ -15,10 +15,8 @@ import logging
 _SUCCESS = 0                    # default success exit status
 _FAILURE = 1                    # default failure exit status
 
-_DEFAULT_HASH_NAME = 'md5'  # either md5, sha1, sha256, sha512, etc
-_DEFAULT_CACHE_DIR = os.path.join(os.path.expanduser('~'),
-                                  '.cache',
-                                  __name__)
+_DEFAULT_HASH_NAME = 'sha256'  # either md5, sha1, sha256, sha512, etc
+_DEFAULT_CACHE_DIR = os.path.join(os.path.expanduser('~'), '.cache', __name__)
 
 
 # Input file (regular or directory) path.
@@ -278,7 +276,7 @@ def isolated_call(typed_args,
 
     top_logger.addHandler(ch)
 
-    load_from_cache = True      # for debugging purpose
+    load_from_cache = False # for debugging purpose
 
     chash = hashlib.new(name=hash_name)
 
