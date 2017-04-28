@@ -1,5 +1,27 @@
 #!/usr/bin/python3
 
+# Only write outputs if newer or content different
+
+# TODO 1. Add wrapper for subprocess.popen
+# TODO 2. Add caching of stdout and stderr
+
+# TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
+# it to be relative.
+
+# TODO Should `InFilePath` and `OutFilePath` be allowed to be the same, that is
+# should we allow working directory input files to be overwritten by output
+# files?
+
+# TODO Cache pruning
+
+# TODO Unittests
+
+# TODO Should we allow `OutDirPath`?
+
+# TODO Check before execution if outputs in working directory are writable
+
+# TODO Should we allow `cache_dir` to be an instance of a specific `CacheDirPath('qac')`
+
 import hashlib
 import os
 import os.path
@@ -241,7 +263,7 @@ def _strip_from_out_file_contents(out_files, prefix):
 
 
 def isolated_call(typed_args,
-                  typed_env,
+                  typed_env=None,
                   extra_inputs=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
@@ -350,17 +372,18 @@ def isolated_call(typed_args,
 
     # expand environment
     env = {}
-    for name, typed_value in sorted(typed_env.items()):  # deterministic env
-        if isinstance(typed_value, TempDirPath):
-            temp_dirs.add(typed_value)
-        else:
-            assert isinstance(typed_value, str)
+    if typed_env is not None:
+        for name, typed_value in sorted(typed_env.items()):  # deterministic env
+            if isinstance(typed_value, TempDirPath):
+                temp_dirs.add(typed_value)
+            else:
+                assert isinstance(typed_value, str)
 
-        value = str(typed_value)
-        env[name] = value
+            value = str(typed_value)
+            env[name] = value
 
-        chash.update(name.encode('utf8'))
-        chash.update(value.encode('utf8'))
+            chash.update(name.encode('utf8'))
+            chash.update(value.encode('utf8'))
 
     if use_caching:
         hexdig = chash.hexdigest()
