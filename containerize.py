@@ -31,6 +31,7 @@ import subprocess
 import tempfile
 import fileinput
 import logging
+import unittest
 
 
 _SUCCESS = 0                    # default success exit status
@@ -491,3 +492,12 @@ def isolated_call(typed_args,
         os.chdir(work_dir)
 
         return exit_status
+
+
+class TestAll(unittest.TestCase):
+    def testDefault(self):
+        assert False
+        pass
+
+if __name__ == '__main__':
+    unittest.main()
