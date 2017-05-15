@@ -1,10 +1,5 @@
 #!/usr/bin/python3
 
-<<<<<<< HEAD
-# Move to AlvPy
-
-=======
->>>>>>> ccb8cbadf5bac01ed953e5078c54ef25e5a3de5b
 # Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
 
 # Only write outputs if newer or content different
