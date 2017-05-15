@@ -3,7 +3,7 @@
 # Add parser that takes command-line arguments in the
 # - input-format "<<{INPUT}" and in the
 # - output-format: ">>{OUTPUT}"
-# Usage: containerize gcc -c '<{foo.c}' -o '>{foo.o}'
+# Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
 
 # Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
 
@@ -300,6 +300,7 @@ def _strip_prefix_from_out_file_contents(out_files, prefix):
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
+                  extra_outputs=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
                   hash_name=_DEFAULT_HASH_NAME,
@@ -398,15 +399,9 @@ def isolated_call(typed_args,
                                         type(extra_input)))
 
     # assert that ins, outs and temps are disjunct
-    in_out_overlap_files = in_files & out_files
-    if in_out_overlap_files:
-        raise Exception("Inputs and outputs overlap for {}".format(in_out_overlap_files))
-    in_temp_overlap_files = in_files & temp_dirs
-    if in_temp_overlap_files:
-        raise Exception("Inputs and temp dirs overlap for {}".format(in_temp_overlap_files))
-    out_temp_overlap_files = out_files & temp_dirs
-    if out_temp_overlap_files:
-        raise Exception("Outputs and temp dirs overlap for {}".format(out_temp_overlap_files))
+    overlap_files = in_files & out_files & temp_dirs
+    if overlap_files:
+        raise Exception("Inputs, outputs or temps overlap for {}".format(overlap_files))
 
     # expand environment
     env = {}
@@ -515,10 +510,12 @@ class TestAll(unittest.TestCase):
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
-            in_file = InFilePath('foo.c')
-            out_file = OutFilePath('foo.o')
+            in_c_file = InFilePath('foo.c')
+            out_o_file = OutFilePath('foo.o')
+            out_gcda_file = OutFilePath('foo.gcda')
+            out_su_file = OutFilePath('foo.su')
 
-            with open(in_file.name, 'w') as f:
+            with open(in_c_file.name, 'w') as f:
                 f.write('''#include <stdio.h>
 
 int f(int x) { return x*x; }
@@ -529,14 +526,18 @@ int main()
   return 0;
 }
 ''')
-            assert in_file.exists()
+            assert in_c_file.exists()
 
-            isolated_call([exec_file,
-                           '-fstack-usage',
-                           '-c', in_file,
-                           '-o', out_file])
+            typed_args=[exec_file,
+                        '-fprofile-generate',  # side-effect output `foo.gcda`
+                        '-fstack-usage',       # side-effect output `foo.su`
+                        '-c', in_c_file,
+                        '-o', out_o_file]
+            isolated_call(typed_args=typed_args,
+                          extra_outputs=[out_gcda_file,
+                                         out_su_file])
 
-            assert out_file.exists()
+            assert out_o_file.exists()
 
             import print_fs
             print_fs.print_tree(box_dir)
