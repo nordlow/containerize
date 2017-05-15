@@ -265,7 +265,7 @@ def copy_input_to_box(work_dir, in_files,
                                  logger=logger)
 
 
-# TODO if possible use `rename()` directly otherwise do `copy()` and `remove()`, then further down assert that output is empty
+# TODO if possible use `rename()` directly otherwise do `copy()` and `remove()`, then further down assert that `out_dir_abspath` is empty
 def copy_output_from_box(out_files,
                          work_dir,
                          logger):
