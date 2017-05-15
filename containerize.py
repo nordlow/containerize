@@ -300,7 +300,7 @@ def _strip_prefix_from_out_file_contents(out_files, prefix):
 def assert_disjunct_file_sets(in_files,
                               out_files,
                               temp_dirs):
-    '''Assert that in_files, out_files and temp_dirs have all disjunct names.'''
+    '''Assert that IN_FILES, OUT_FILES and TEMP_DIRS have all disjunct names.'''
 
     # TODO can these conversions be optimized?
     in_file_names = set(map(str, in_files))
@@ -309,15 +309,15 @@ def assert_disjunct_file_sets(in_files,
 
     in_out_overlap_files = in_file_names & out_file_names
     if in_out_overlap_files:
-        raise Exception("Inputs and outputs overlap for {}".format(in_out_overlap_files))
+        raise Exception("Input files and output files overlap for {}".format(in_out_overlap_files))
 
     in_temp_overlap_files = in_file_names & temp_dir_names
     if in_temp_overlap_files:
-        raise Exception("Inputs and temp dirs overlap for {}".format(in_temp_overlap_files))
+        raise Exception("Input files and temporary directories overlap for {}".format(in_temp_overlap_files))
 
     out_temp_overlap_files = out_file_names & temp_dir_names
     if out_temp_overlap_files:
-        raise Exception("Outputs and temp dirs overlap for {}".format(out_temp_overlap_files))
+        raise Exception("Output files and temporary directories overlap for {}".format(out_temp_overlap_files))
 
 
 def isolated_call(typed_args,
