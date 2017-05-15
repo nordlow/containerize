@@ -297,6 +297,29 @@ def _strip_prefix_from_out_file_contents(out_files, prefix):
             print(_strip_prefix(line, prefix), end='')
 
 
+def assert_disjunct_file_sets(in_files,
+                              out_files,
+                              temp_dirs):
+    '''Assert that in_files, out_files and temp_dirs have all disjunct names.'''
+
+    # TODO can these conversions be optimized?
+    in_file_names = set(map(str, in_files))
+    out_file_names = set(map(str, out_files))
+    temp_dir_names = set(map(str, temp_dirs))
+
+    in_out_overlap_files = in_file_names & out_file_names
+    if in_out_overlap_files:
+        raise Exception("Inputs and outputs overlap for {}".format(in_out_overlap_files))
+
+    in_temp_overlap_files = in_file_names & temp_dir_names
+    if in_temp_overlap_files:
+        raise Exception("Inputs and temp dirs overlap for {}".format(in_temp_overlap_files))
+
+    out_temp_overlap_files = out_file_names & temp_dir_names
+    if out_temp_overlap_files:
+        raise Exception("Outputs and temp dirs overlap for {}".format(out_temp_overlap_files))
+
+
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
@@ -398,10 +421,9 @@ def isolated_call(typed_args,
                                 .format(extra_input,
                                         type(extra_input)))
 
-    # assert that ins, outs and temps are disjunct
-    overlap_files = in_files & out_files & temp_dirs
-    if overlap_files:
-        raise Exception("Inputs, outputs or temps overlap for {}".format(overlap_files))
+    assert_disjunct_file_sets(in_files=in_files,
+                              out_files=out_files,
+                              temp_dirs=temp_dirs)
 
     # expand environment
     env = {}
