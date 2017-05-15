@@ -109,10 +109,7 @@ def _atomic_copyfile(src, dst, overwrite, logger):
     try:
         with tempfile.NamedTemporaryFile(dir=os.path.dirname(dst),
                                          delete=False) as tmp_handle:
-<<<<<<< HEAD
             # shutil.copy2(src=src, dst=tmp_handle.name)  # `copy2` doesn't change mtime
-=======
->>>>>>> ccb8cbadf5bac01ed953e5078c54ef25e5a3de5b
             with open(src, 'rb') as src_fd:
                 shutil.copyfileobj(fsrc=src_fd,
                                    fdst=tmp_handle)
@@ -144,12 +141,9 @@ def _file_hexdigest(file_name,
     with open(file_name, 'rb') as out_handle:
         hash_state.update(out_handle.read())
     return hash_state.hexdigest()
-<<<<<<< HEAD
 
 
 MANIFEST_FIELD_SEPARATOR = ' '
-=======
->>>>>>> ccb8cbadf5bac01ed953e5078c54ef25e5a3de5b
 
 
 def _try_store_into_cache(out_files,
@@ -177,13 +171,9 @@ def _try_store_into_cache(out_files,
                     logger.info('Skipped storing {} with contents {} already in cache'.format(out_file_name, hexdig))
 
                 # write entry in manifest file
-<<<<<<< HEAD
                 manifest_handle.write(hexdig + MANIFEST_FIELD_SEPARATOR +
                                       str(os.path.getmtime(out_file_name)) + MANIFEST_FIELD_SEPARATOR +
                                       out_file_name + '\n')
-=======
-                manifest_handle.write(hexdig + ' ' + out_file_name + '\n')
->>>>>>> ccb8cbadf5bac01ed953e5078c54ef25e5a3de5b
 
         return True
     except FileNotFoundError as exc:
@@ -327,15 +317,9 @@ def isolated_call(typed_args,
     log_file.setLevel(logging.DEBUG)
     log_file.setFormatter(formatter)
     top_logger.addHandler(log_file)
-<<<<<<< HEAD
 
     load_from_cache = True # for debugging purpose. TODO remove before deployment
 
-=======
-
-    load_from_cache = False  # for debugging purpose. TODO remove before deployment
-
->>>>>>> ccb8cbadf5bac01ed953e5078c54ef25e5a3de5b
     hash_state = hashlib.new(name=hash_name)
 
     in_files = set()
