@@ -15,8 +15,6 @@
 # TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
 # it to be relative.
 
-# TODO Cache pruning
-
 # TODO Should we allow `OutDirPath`?
 
 # TODO Check before execution if outputs in working directory are writable
@@ -39,10 +37,22 @@ import unittest
 _SUCCESS = 0                    # default success exit status
 _FAILURE = 1                    # default failure exit status
 
-_DEFAULT_HASH_NAME = 'sha256'  # either md5, sha1, sha256, sha512, etc
+_DEFAULT_HASH_NAME = 'sha256'   # either md5, sha1, sha256, sha512, etc
 
 _HOME_DIR = os.path.expanduser('~')
 _DEFAULT_CACHE_DIR = os.path.join(_HOME_DIR, '.cache', __name__)
+
+
+# needed for cache pruning
+def tree_files_sorted_by_recent_mtime(rootfolder, file_matcher=None):
+    return sorted((os.path.join(dirname, filename)
+                   for dirname, dirnames, filenames in os.walk(rootfolder)
+                   for filename in filenames
+                   if (not file_matcher or
+                       file_matcher(filename))),
+                  key=lambda fn: os.stat(fn).st_mtime,
+                  reverse=True)
+# print(tree_files_sorted_by_recent_mtime('.'))
 
 
 # Input file (regular or directory) path.
