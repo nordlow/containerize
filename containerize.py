@@ -499,16 +499,39 @@ def isolated_call(typed_args,
 
 
 class TestAll(unittest.TestCase):
-    def testDefault(self):
+
+    def test_gcc_compilation(self):
 
         with tempfile.TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
-            with open('foo.c', 'w') as f:
-                f.write("int x;")
+
+            exec_file = ExecFilePath('/usr/bin/gcc')
+            in_file = InFilePath('foo.c')
+            out_file = OutFilePath('foo.out')
+
+            with open(in_file.name, 'w') as f:
+                f.write('''#include <stdio.h>
+int main()
+{
+  printf("Hello world\\n");
+  return 0;
+}
+''')
+            assert in_file.exists()
+
+            isolated_call([exec_file,
+                           '-Wall',
+                           '-c', in_file,
+                           '-o', out_file])
+
+            assert out_file.exists()
 
             import print_fs
             print_fs.print_tree(box_dir)
-        pass
+
+            # isolated_call([ExecFilePath(os.path.join('.', out_file.name))])
+
+        assert not os.path.exists(box_dir)
 
 
 if __name__ == '__main__':
