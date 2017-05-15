@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-# Detect undeclared files in output and temp directory
+# Throw exception for undeclared files in output and temp directory
 
 # Add parser that takes command-line arguments in the
 # - input-format "<<{INPUT}" and in the
