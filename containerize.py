@@ -515,10 +515,13 @@ class TestAll(unittest.TestCase):
 
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_file = InFilePath('foo.c')
-            out_file = OutFilePath('foo.out')
+            out_file = OutFilePath('foo.o')
 
             with open(in_file.name, 'w') as f:
                 f.write('''#include <stdio.h>
+
+int f(int x) { return x*x; }
+
 int main()
 {
   printf("Hello world\\n");
@@ -528,7 +531,7 @@ int main()
             assert in_file.exists()
 
             isolated_call([exec_file,
-                           '-Wall',
+                           '-fstack-usage',
                            '-c', in_file,
                            '-o', out_file])
 
