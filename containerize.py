@@ -562,7 +562,7 @@ int main()
             assert in_c_file.exists()
 
             typed_args = [exec_file,
-                          '-fstack-usage',       # side-effect output `foo.su`
+                          '-fstack-usage',  # has side-effect output `foo.su`
                           '-c', in_c_file,
                           '-o', out_o_file]
             isolated_call(typed_args=typed_args,
