@@ -17,8 +17,6 @@
 
 # TODO Cache pruning
 
-# TODO Unittests
-
 # TODO Should we allow `OutDirPath`?
 
 # TODO Check before execution if outputs in working directory are writable
@@ -528,8 +526,6 @@ int main()
 
             import print_fs
             print_fs.print_tree(box_dir)
-
-            # isolated_call([ExecFilePath(os.path.join('.', out_file.name))])
 
         assert not os.path.exists(box_dir)
 
