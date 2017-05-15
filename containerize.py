@@ -3,7 +3,7 @@
 # Add parser that takes command-line arguments in the
 # - input-format "<<{INPUT}" and in the
 # - output-format: ">>{OUTPUT}"
-# Usage: memoize gcc -fstack-usage -c '<{foo.c}' -o '>{foo.o}'
+# Usage: containerize gcc -fstack-usage -c '<{foo.c}' -o '>{foo.o}'
 
 # Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
 
