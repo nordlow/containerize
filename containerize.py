@@ -325,7 +325,7 @@ def assert_disjunct_file_sets(in_files,
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
-                  extra_output_files=None,
+                  side_effect_output_files=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
                   hash_name=_DEFAULT_HASH_NAME,
@@ -424,8 +424,8 @@ def isolated_call(typed_args,
                                         type(extra_input)))
 
     # hash extra output strings and paths
-    if extra_output_files is not None:
-        for extra_output in extra_output_files:
+    if side_effect_output_files is not None:
+        for extra_output in side_effect_output_files:
             if isinstance(extra_output, OutFilePath):
                 out_files.add(extra_output)
             else:
@@ -566,7 +566,7 @@ int main()
                           '-c', in_c_file,
                           '-o', out_o_file]
             isolated_call(typed_args=typed_args,
-                          extra_output_files=[out_su_file])
+                          side_effect_output_files=[out_su_file])
 
             assert out_o_file.exists()
             assert out_su_file.exists()
