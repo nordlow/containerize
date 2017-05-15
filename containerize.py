@@ -496,8 +496,16 @@ def isolated_call(typed_args,
 
 class TestAll(unittest.TestCase):
     def testDefault(self):
-        assert False
+
+        with tempfile.TemporaryDirectory() as box_dir:
+            os.chdir(box_dir)
+            with open('foo.c', 'w') as f:
+                f.write("int x;")
+
+            import print_fs
+            print_fs.print_tree(box_dir)
         pass
+
 
 if __name__ == '__main__':
     unittest.main()
