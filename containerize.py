@@ -394,14 +394,16 @@ def isolated_call(typed_args,
         if isinstance(typed_arg, InFilePath):
             in_files.add(typed_arg)
             if use_caching:
-                hash_state.update(open(typed_arg.as_unboxed(), 'rb').read())  # file content
+                with open(typed_arg.as_unboxed(), 'rb') as in_h:
+                    hash_state.update(in_h.read())  # file content
         elif isinstance(typed_arg, OutFilePath):
             out_files.add(typed_arg)
         elif isinstance(typed_arg, TempDirPath):
             temp_dirs.add(typed_arg)
         elif isinstance(typed_arg, ExecFilePath):
             if use_caching:
-                hash_state.update(open(typed_arg.as_unboxed(), 'rb').read())  # file content
+                with open(typed_arg.as_unboxed(), 'rb') as exec_h:
+                    hash_state.update(exec_h.read())  # file content
             # allow absolute file paths here for now
         else:
             assert isinstance(typed_arg, str)
