@@ -201,8 +201,8 @@ def _try_load_from_cache(cache_manifest_file,
             out_file_name = str(out_file)
 
             (manifest_hash, manifest_file_mtime) = manifest_map[out_file_name]
-            if (# TODO doesn't work until we can preserve mtime in _atomic_copyfile:
-                # manifest_file_mtime != os.path.getmtime(out_file_name) and  # if mtime and
+            if (  # TODO doesn't work until we can preserve mtime in _atomic_copyfile:
+                  # manifest_file_mtime != os.path.getmtime(out_file_name) and  # if mtime and
                 manifest_hash != _file_hexdigest(file_name=out_file_name,  # contents has changed
                                                  hash_name=hash_name)):
                 print("Output file {} has changed".format(out_file_name))
@@ -217,7 +217,7 @@ def _try_load_from_cache(cache_manifest_file,
             manifest_map.pop(out_file_name, None)
         assert not manifest_map, "Output files {} didn't match contents of manifest file {}".format(out_files, cache_manifest_file)
         return True
-    except FileNotFoundError as exc:
+    except FileNotFoundError:
         pass
     return False
 
@@ -226,7 +226,7 @@ def _atomic_link_or_copyfile(src, dst, logger):
     try:                        # first try
         os.link(src=src,        # hardlink
                 dst=dst)
-    except Exception as e:           # and if that fails
+    except Exception:             # and if that fails
         _atomic_copyfile(src=src,  # do plain copy
                          dst=dst,
                          overwrite=True,
@@ -318,7 +318,7 @@ def isolated_call(typed_args,
     log_file.setFormatter(formatter)
     top_logger.addHandler(log_file)
 
-    load_from_cache = True # for debugging purpose. TODO remove before deployment
+    load_from_cache = True  # for debugging purpose. TODO remove before deployment
 
     hash_state = hashlib.new(name=hash_name)
 
