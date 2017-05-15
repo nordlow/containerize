@@ -214,7 +214,7 @@ def _try_load_from_cache(cache_manifest_file,
 
             out_file_name = str(out_file)
 
-            (manifest_hash, manifest_file_mtime) = manifest_map[out_file_name]
+            (manifest_hash, manifest_file_mtime) = manifest_map[out_file_name]  # KeyError caught below
             if (  # TODO doesn't work until we can preserve mtime in _atomic_copyfile:
                   # manifest_file_mtime != os.path.getmtime(out_file_name) and  # if mtime and
                 manifest_hash != _file_hexdigest(file_name=out_file_name,  # contents has changed
@@ -232,6 +232,8 @@ def _try_load_from_cache(cache_manifest_file,
         assert not manifest_map, "Output files {} didn't match contents of manifest file {}".format(out_files, cache_manifest_file)
         return True
     except FileNotFoundError:
+        pass
+    except KeyError:
         pass
     return False
 
@@ -323,7 +325,7 @@ def assert_disjunct_file_sets(in_files,
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
-                  extra_outputs=None,
+                  extra_output_files=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
                   hash_name=_DEFAULT_HASH_NAME,
@@ -417,9 +419,19 @@ def isolated_call(typed_args,
                     hash_state.update(extra_input.as_boxed().encode('utf8'))  # file named
                     hash_state.update(open(extra_input.as_unboxed(), 'rb').read())  # file content
             else:
-                raise Exception('Cannot handle extra_input {} of type {}'
+                raise Exception('Cannot handle extra input file {} of type {}'
                                 .format(extra_input,
                                         type(extra_input)))
+
+    # hash extra output strings and paths
+    if extra_output_files is not None:
+        for extra_output in extra_output_files:
+            if isinstance(extra_output, OutFilePath):
+                out_files.add(extra_output)
+            else:
+                raise Exception('Cannot handle extra output file {} of type {}'
+                                .format(extra_output,
+                                        type(extra_output)))
 
     assert_disjunct_file_sets(in_files=in_files,
                               out_files=out_files,
@@ -534,7 +546,6 @@ class TestAll(unittest.TestCase):
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_c_file = InFilePath('foo.c')
             out_o_file = OutFilePath('foo.o')
-            out_gcda_file = OutFilePath('foo.gcda')
             out_su_file = OutFilePath('foo.su')
 
             with open(in_c_file.name, 'w') as f:
@@ -550,19 +561,18 @@ int main()
 ''')
             assert in_c_file.exists()
 
-            typed_args=[exec_file,
-                        '-fprofile-generate',  # side-effect output `foo.gcda`
-                        '-fstack-usage',       # side-effect output `foo.su`
-                        '-c', in_c_file,
-                        '-o', out_o_file]
+            typed_args = [exec_file,
+                          '-fstack-usage',       # side-effect output `foo.su`
+                          '-c', in_c_file,
+                          '-o', out_o_file]
             isolated_call(typed_args=typed_args,
-                          extra_outputs=[out_gcda_file,
-                                         out_su_file])
+                          extra_output_files=[out_su_file])
 
             assert out_o_file.exists()
+            assert out_su_file.exists()
 
-            import print_fs
-            print_fs.print_tree(box_dir)
+            # import print_fs
+            # print_fs.print_tree(box_dir)
 
         assert not os.path.exists(box_dir)
 
