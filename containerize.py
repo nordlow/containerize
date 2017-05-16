@@ -327,7 +327,7 @@ def assert_disjunct_file_sets(in_files,
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
-                  side_effect_output_files=None,
+                  side_effect_out_paths=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess.call,
                   hash_name=_DEFAULT_HASH_NAME,
@@ -428,14 +428,14 @@ def isolated_call(typed_args,
                                         type(extra_input)))
 
     # hash extra output strings and paths
-    if side_effect_output_files is not None:
-        for extra_output in side_effect_output_files:
-            if isinstance(extra_output, OutFilePath):
-                out_files.add(extra_output)
+    if side_effect_out_paths is not None:
+        for out_path in side_effect_out_paths:
+            if isinstance(out_path, OutFilePath):
+                out_files.add(out_path)
             else:
                 raise Exception('Cannot handle extra output file {} of type {}'
-                                .format(extra_output,
-                                        type(extra_output)))
+                                .format(out_path,
+                                        type(out_path)))
 
     assert_disjunct_file_sets(in_files=in_files,
                               out_files=out_files,
@@ -565,18 +565,49 @@ int main()
 ''')
             assert in_c_file.exists()
 
-            typed_args = [exec_file,
-                          '-fstack-usage',  # has side-effect output `foo.su`
-                          '-c', in_c_file,
-                          '-o', out_o_file]
-            isolated_call(typed_args=typed_args,
-                          side_effect_output_files=[out_su_file])
+            isolated_call(typed_args=[exec_file,
+                                      '-fstack-usage',  # has side-effect output `foo.su`
+                                      '-c', in_c_file,
+                                      '-o', out_o_file],
+                          side_effect_out_paths=[out_su_file])
 
             assert out_o_file.exists()
             assert out_su_file.exists()
 
             # import print_fs
             # print_fs.print_tree(box_dir)
+
+        assert not os.path.exists(box_dir)
+
+
+    def test_self_assigning_compilation(self):
+
+        with tempfile.TemporaryDirectory() as box_dir:
+            os.chdir(box_dir)
+
+            exec_file = ExecFilePath('/usr/bin/gcc')
+            in_c_file = InFilePath('foo.c')
+            out_o_file = OutFilePath('foo.c')  # output same as input is an error
+
+            with open(in_c_file.name, 'w') as f:
+                f.write('''#include <stdio.h>
+
+int f(int x) { return x*x; }
+
+int main()
+{
+  printf("Hello world\\n");
+  return 0;
+}
+''')
+            assert in_c_file.exists()
+
+            with self.assertRaises(Exception) as context:
+                isolated_call(typed_args=[exec_file,
+                                          '-c', in_c_file,
+                                          '-o', out_o_file])
+
+            self.assertTrue("Input files and output files overlap for {'foo.c'}" in str(context.exception))
 
         assert not os.path.exists(box_dir)
 
