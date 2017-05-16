@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 
-# Throw exception for undeclared files in output and temp directory
+# TODO down assert that `out_dir_abspath` is empty after things have been moved
+
+# Throw exception for undeclared files in temp directory
 
 # Add parser that takes command-line arguments in the
 # - input-format "<<{INPUT}" and in the
@@ -265,8 +267,7 @@ def copy_input_to_box(work_dir, in_files,
                                  logger=logger)
 
 
-# TODO further down assert that `out_dir_abspath` is empty
-def copy_output_from_box(out_files,
+def move_output_from_box(out_files,
                          work_dir,
                          logger):
     for out_file in out_files:
@@ -277,7 +278,7 @@ def copy_output_from_box(out_files,
             os.rename(src=src,
                       dst=dst)
             logger.info('Moved {} from box to working directory {}'.format(src, dst))
-        except:
+        except:                 # if rename failed try simple copy
             _atomic_link_or_copyfile(src=out_file.as_boxed(),
                                      dst=os.path.join(work_dir,
                                                       out_file.as_boxed()),
@@ -539,7 +540,7 @@ def isolated_call(typed_args,
                                       hash_name=hash_name,
                                       logger=top_logger)
 
-            copy_output_from_box(out_files=out_files,
+            move_output_from_box(out_files=out_files,
                                  work_dir=work_dir,
                                  logger=top_logger)
 
