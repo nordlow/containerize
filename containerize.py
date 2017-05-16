@@ -265,15 +265,24 @@ def copy_input_to_box(work_dir, in_files,
                                  logger=logger)
 
 
-# TODO if possible use `rename()` directly otherwise do `copy()` and `remove()`, then further down assert that `out_dir_abspath` is empty
+# TODO further down assert that `out_dir_abspath` is empty
 def copy_output_from_box(out_files,
                          work_dir,
                          logger):
     for out_file in out_files:
-        _atomic_link_or_copyfile(src=out_file.as_boxed(),
-                                 dst=os.path.join(work_dir,
-                                                  out_file.as_boxed()),
-                                 logger=logger)
+        try:
+            src = out_file.as_boxed()
+            dst = os.path.join(work_dir,
+                               out_file.as_boxed())
+            os.rename(src=src,
+                      dst=dst)
+            logger.info('Moved {} from box to working directory {}'.format(src, dst))
+        except:
+            _atomic_link_or_copyfile(src=out_file.as_boxed(),
+                                     dst=os.path.join(work_dir,
+                                                      out_file.as_boxed()),
+                                     logger=logger)
+            os.remove(out_file.as_boxed())
 
 
 def create_out_dirs(out_files,
@@ -552,7 +561,7 @@ int main()
 
 class TestAll(unittest.TestCase):
 
-    def test_gcc_compilation(self):
+    def test_ok_gcc_compilation(self):
 
         with tempfile.TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
@@ -580,8 +589,34 @@ class TestAll(unittest.TestCase):
 
         assert not os.path.exists(box_dir)
 
+    def test_failing_undeclared_output_compilation(self):
 
-    def test_self_assigning_compilation(self):
+        with tempfile.TemporaryDirectory() as box_dir:
+            os.chdir(box_dir)
+
+            exec_file = ExecFilePath('/usr/bin/gcc')
+            in_c_file = InFilePath('foo.c')
+            out_o_file = OutFilePath('foo.o')
+
+            with open(in_c_file.name, 'w') as f:
+                f.write(HELLOW_WORLD_C_SOURCE)
+            assert in_c_file.exists()
+
+            # with self.assertRaises(Exception) as context:
+            #     isolated_call(typed_args=[exec_file,
+            #                               '-fstack-usage',  # has undeclared side-effect output `foo.su`
+            #                               '-c', in_c_file,
+            #                               '-o', out_o_file])
+
+            # assert out_o_file.exists()
+            # # assert out_su_file.exists()
+
+            # import print_fs
+            # print_fs.print_tree(box_dir)
+
+        assert not os.path.exists(box_dir)
+
+    def test_failing_self_assigning_compilation(self):
 
         with tempfile.TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
