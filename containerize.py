@@ -558,6 +558,7 @@ def isolated_call(typed_args,
 
         return exit_status
 
+
 HELLOW_WORLD_C_SOURCE = '''#include <stdio.h>
 
 int f(int x) { return x*x; }
