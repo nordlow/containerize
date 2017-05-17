@@ -2,6 +2,8 @@
 
 # TODOs in order of importance
 #
+# - TODO Test population and modification of cache by setting to temporary directory inside unittest
+#
 # - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
 #
 # - TODO 1. Add wrapper for subprocess.Popen
