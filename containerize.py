@@ -26,7 +26,7 @@
 import hashlib
 import os
 import os.path
-import pathlib
+import pathlib                  # TODO use pathlib2 on Python 2
 import shutil
 import stat
 import subprocess
@@ -302,10 +302,18 @@ def _strip_prefix(text, prefix):
 
 def _strip_prefix_from_out_file_contents(out_files, prefix):
     """Remove sandbox absolute path PREFIX from the contents of OUT_FILES."""
-    with fileinput.input(files=map(str, out_files),
-                         inplace=True, backup='.bak') as f:
-        for line in f:
-            print(_strip_prefix(line, prefix), end='')
+    for out_file in out_files:
+        with tempfile.NamedTemporaryFile(dir=os.path.dirname(str(out_file)),
+                                         delete=False) as fixed_out_h:
+            try:
+                with open(str(out_file), 'r') as out_h:
+                    for line in out_h:
+                        fixed_out_h.write(_strip_prefix(line, prefix))
+                os.link(src=str(fixed_out_h),
+                        dst=out_file.name())
+            except:
+                os.remove(fixed_out_h.name)
+                pass
 
 
 def assert_disjunct_file_sets(in_files,
@@ -522,7 +530,7 @@ def isolated_call(typed_args,
 
             # TODO merge these three processings of out_files
 
-            if strip_box_in_dir_prefix:
+            if strip_box_in_dir_prefix:  # currently needed by Qac call that writes qac outputs to file
                 _strip_prefix_from_out_file_contents(out_files=out_files,
                                                      prefix=in_dir_abspath + os.sep)
 
@@ -558,6 +566,7 @@ int f(int x) { return x*x; }
 
 int main()
 {
+  int x;
   printf("Hello world\\n");
   return 0;
 }
@@ -583,7 +592,8 @@ class TestAll(unittest.TestCase):
                                       '-fstack-usage',  # has side-effect output `foo.su`
                                       '-c', in_c_file,
                                       '-o', out_o_file],
-                          side_effect_out_paths=[out_su_file])
+                          side_effect_out_paths=[out_su_file],
+                          strip_box_in_dir_prefix=True)
 
             assert out_o_file.exists()
             assert out_su_file.exists()
