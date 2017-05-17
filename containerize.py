@@ -249,9 +249,9 @@ def _atomic_link_or_copyfile(src, dst, logger):
                          logger=logger)
 
 
-def copy_input_to_box(work_dir, in_files,
-                      in_dir_abspath,
-                      logger):
+def link_or_copy_input_to_box(work_dir, in_files,
+                              in_dir_abspath,
+                              logger):
     os.mkdir(in_dir_abspath)
     os.chdir(in_dir_abspath)
     for in_file in in_files:
@@ -490,10 +490,10 @@ def isolated_call(typed_args,
         out_dir_abspath = os.path.join(box_dir, out_subdir_name)
         temp_dir_abspath = os.path.join(box_dir, temp_subdir_name)
 
-        copy_input_to_box(work_dir=work_dir,
-                          in_files=in_files,
-                          in_dir_abspath=in_dir_abspath,
-                          logger=top_logger)
+        link_or_copy_input_to_box(work_dir=work_dir,
+                                  in_files=in_files,
+                                  in_dir_abspath=in_dir_abspath,
+                                  logger=top_logger)
 
         # create output directories
         create_out_dirs(out_files=out_files,
