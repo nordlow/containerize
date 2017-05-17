@@ -29,7 +29,7 @@ import os.path
 try:
     import pathlib              # Python 3
 except:
-    import pathlib2 as pathlib  # Python 2
+    import pathlib2 as pathlib  # Python 2: pip install pathlib2
 
 import shutil
 import stat
@@ -165,10 +165,13 @@ MANIFEST_FIELD_SEPARATOR = ' '
 
 
 def _try_store_into_cache(out_files,
+                          stdout_bytes,  # TODO cache
+                          stderr_bytes,  # TODO cache
                           cache_manifest_file,
                           cache_artifacts_dir,
                           hash_name,
                           logger):
+
     try:
         with open(cache_manifest_file, 'w') as manifest_handle:
             for out_file in out_files:
@@ -522,6 +525,9 @@ def isolated_call(typed_args,
                            stderr=subprocess.STDOUT,
                            shell=shell,
                            timeout=timeout)
+        stdout_bytes = None     # TODO from call above
+        stderr_bytes = None     # TODO from call above
+
         os.chmod(in_dir_abspath,
                  stat.S_IREAD |
                  stat.S_IWRITE |  # make it writeable again so that it can be removed
@@ -539,6 +545,8 @@ def isolated_call(typed_args,
 
             if use_caching:
                 _try_store_into_cache(out_files=out_files,
+                                      stdout_bytes=stdout_bytes,
+                                      stderr_bytes=stderr_bytes,
                                       cache_manifest_file=cache_manifest_file,
                                       cache_artifacts_dir=cache_artifacts_dir,
                                       hash_name=hash_name,
