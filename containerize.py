@@ -47,6 +47,9 @@ _DEFAULT_HASH_NAME = 'sha256'   # either md5, sha1, sha256, sha512, etc
 _HOME_DIR = os.path.expanduser('~')
 _DEFAULT_CACHE_DIR = os.path.join(_HOME_DIR, '.cache', __name__)
 
+MANIFEST_FIELD_SEPARATOR = ' '
+MANIFEST_FILE_EXTENSION = '.manifest'
+
 
 # needed for cache pruning
 def tree_files_sorted_by_recent_mtime(rootfolder, file_matcher=None):
@@ -159,9 +162,6 @@ def _file_hexdigest(file_name,
     with open(file_name, 'rb') as out_handle:
         hash_state.update(out_handle.read())
     return hash_state.hexdigest()
-
-
-MANIFEST_FIELD_SEPARATOR = ' '
 
 
 def _try_store_into_cache(out_files,
@@ -486,7 +486,7 @@ def isolated_call(typed_args,
         os.makedirs(cache_prefix_dir, exist_ok=True)
 
         cache_manifest_file = os.path.join(cache_prefix_dir,
-                                           hexdig + '-output.manifest')
+                                           hexdig + '-output' + MANIFEST_FILE_EXTENSION)
 
         cache_artifacts_dir = os.path.join(cache_dir, 'artifacts', hash_name)  # this could be made a common parameter
         os.makedirs(cache_artifacts_dir, exist_ok=True)
