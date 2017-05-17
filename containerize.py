@@ -1,37 +1,35 @@
 #!/usr/bin/python3
 
-# Throw exception for undeclared files in temp directory
+# TODOs in order of importance
+#
+# - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
+#
+# - TODO 1. Add wrapper for subprocess.Popen
+# - TODO 2. Add caching of stdout and stderr
+#
+# - TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
+#   it to be relative.
+#
+# - TODO Should we allow `OutDirPath`?
+#
+# - TODO Check before execution if outputs in working directory are writable
+#
+# - TODO Should we allow `cache_dir` to be an instance of a specific `CacheDirPath('qac')`
+#
+# - TODO Add parser that takes command-line arguments in the
+#   - input-format "<<{INPUT}" and in the
+#   - output-format: ">>{OUTPUT}"
+#   Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
 
-# Add parser that takes command-line arguments in the
-# - input-format "<<{INPUT}" and in the
-# - output-format: ">>{OUTPUT}"
-# Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
-
-# Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
-
-# Only write outputs if newer or content different
-
-# TODO 1. Add wrapper for subprocess.Popen
-# TODO 2. Add caching of stdout and stderr
-
-# TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
-# it to be relative.
-
-# TODO Should we allow `OutDirPath`?
-
-# TODO Check before execution if outputs in working directory are writable
-
-# TODO Should we allow `cache_dir` to be an instance of a specific `CacheDirPath('qac')`
 
 import hashlib
 import os
 import os.path
-import pathlib
+import pathlib                  # TODO use pathlib2 on Python 2
 import shutil
 import stat
 import subprocess
 import tempfile
-import fileinput
 import logging
 import unittest
 
@@ -220,7 +218,6 @@ def _try_load_from_cache(cache_manifest_file,
                   # manifest_file_mtime != os.path.getmtime(out_file_name) and  # if mtime and
                 manifest_hash != _file_hexdigest(file_name=out_file_name,  # contents has changed
                                                  hash_name=hash_name)):
-                print("Output file {} has changed".format(out_file_name))
 
                 # must not use link here
                 if _atomic_copyfile(src=manifest_hash,
@@ -250,9 +247,9 @@ def _atomic_link_or_copyfile(src, dst, logger):
                          logger=logger)
 
 
-def copy_input_to_box(work_dir, in_files,
-                      in_dir_abspath,
-                      logger):
+def link_or_copy_input_to_box(work_dir, in_files,
+                              in_dir_abspath,
+                              logger):
     os.mkdir(in_dir_abspath)
     os.chdir(in_dir_abspath)
     for in_file in in_files:
@@ -303,10 +300,18 @@ def _strip_prefix(text, prefix):
 
 def _strip_prefix_from_out_file_contents(out_files, prefix):
     """Remove sandbox absolute path PREFIX from the contents of OUT_FILES."""
-    with fileinput.input(files=map(str, out_files),
-                         inplace=True, backup='.bak') as f:
-        for line in f:
-            print(_strip_prefix(line, prefix), end='')
+    for out_file in out_files:
+        with tempfile.NamedTemporaryFile(dir=os.path.dirname(str(out_file)),
+                                         delete=False) as fixed_out_h:
+            try:
+                with open(str(out_file), 'r') as out_h:
+                    for line in out_h:
+                        fixed_out_h.write(_strip_prefix(line, prefix))
+                os.link(src=str(fixed_out_h),
+                        dst=out_file.name())
+            except:
+                os.remove(fixed_out_h.name)
+                pass
 
 
 def assert_disjunct_file_sets(in_files,
@@ -491,10 +496,10 @@ def isolated_call(typed_args,
         out_dir_abspath = os.path.join(box_dir, out_subdir_name)
         temp_dir_abspath = os.path.join(box_dir, temp_subdir_name)
 
-        copy_input_to_box(work_dir=work_dir,
-                          in_files=in_files,
-                          in_dir_abspath=in_dir_abspath,
-                          logger=top_logger)
+        link_or_copy_input_to_box(work_dir=work_dir,
+                                  in_files=in_files,
+                                  in_dir_abspath=in_dir_abspath,
+                                  logger=top_logger)
 
         # create output directories
         create_out_dirs(out_files=out_files,
@@ -523,7 +528,7 @@ def isolated_call(typed_args,
 
             # TODO merge these three processings of out_files
 
-            if strip_box_in_dir_prefix:
+            if strip_box_in_dir_prefix:  # currently needed by Qac call that writes qac outputs to file
                 _strip_prefix_from_out_file_contents(out_files=out_files,
                                                      prefix=in_dir_abspath + os.sep)
 
@@ -553,16 +558,19 @@ def isolated_call(typed_args,
 
         return exit_status
 
+
 HELLO_WORLD_C_SOURCE = '''#include <stdio.h>
 
 int f(int x) { return x*x; }
 
 int main()
 {
+  int x;
   printf("Hello world\\n");
   return 0;
 }
 '''
+
 
 class TestAll(unittest.TestCase):
 
@@ -584,7 +592,8 @@ class TestAll(unittest.TestCase):
                                       '-fstack-usage',  # has side-effect output `foo.su`
                                       '-c', in_c_file,
                                       '-o', out_o_file],
-                          side_effect_out_paths=[out_su_file])
+                          side_effect_out_paths=[out_su_file],
+                          strip_box_in_dir_prefix=True)
 
             assert out_o_file.exists()
             assert out_su_file.exists()
