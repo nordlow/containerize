@@ -220,7 +220,6 @@ def _try_load_from_cache(cache_manifest_file,
                   # manifest_file_mtime != os.path.getmtime(out_file_name) and  # if mtime and
                 manifest_hash != _file_hexdigest(file_name=out_file_name,  # contents has changed
                                                  hash_name=hash_name)):
-                # print("Output file {} has changed".format(out_file_name))
 
                 # must not use link here
                 if _atomic_copyfile(src=manifest_hash,
