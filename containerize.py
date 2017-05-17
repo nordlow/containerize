@@ -21,6 +21,7 @@
 #   - output-format: ">>{OUTPUT}"
 #   Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
 
+
 import hashlib
 import os
 import os.path
