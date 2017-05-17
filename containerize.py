@@ -47,6 +47,9 @@ _DEFAULT_HASH_NAME = 'sha256'   # either md5, sha1, sha256, sha512, etc
 _HOME_DIR = os.path.expanduser('~')
 _DEFAULT_CACHE_DIR = os.path.join(_HOME_DIR, '.cache', __name__)
 
+MANIFESTS_SUB_DIR_NAME = 'manifests'
+ARTIFACTS_SUB_DIR_NAME = 'artifacts'
+
 MANIFEST_FIELD_SEPARATOR = ' '
 MANIFEST_FILE_EXTENSION = '.manifest'
 
@@ -480,15 +483,18 @@ def isolated_call(typed_args,
     if use_caching:
         hexdig = hash_state.hexdigest()
 
-        cache_prefix_dir = os.path.join(cache_dir,
-                                        hexdig[0:2],
-                                        hexdig[2:4])
-        os.makedirs(cache_prefix_dir, exist_ok=True)
+        cache_manifest_dir = os.path.join(cache_dir,
+                                          MANIFESTS_SUB_DIR_NAME,
+                                          hexdig[0:2],
+                                          hexdig[2:4])
+        os.makedirs(cache_manifest_dir, exist_ok=True)
 
-        cache_manifest_file = os.path.join(cache_prefix_dir,
+        cache_manifest_file = os.path.join(cache_manifest_dir,
                                            hexdig + '-output' + MANIFEST_FILE_EXTENSION)
 
-        cache_artifacts_dir = os.path.join(cache_dir, 'artifacts', hash_name)  # this could be made a common parameter
+        cache_artifacts_dir = os.path.join(cache_dir,
+                                           ARTIFACTS_SUB_DIR_NAME,
+                                           hash_name)
         os.makedirs(cache_artifacts_dir, exist_ok=True)
 
         if load_from_cache:
