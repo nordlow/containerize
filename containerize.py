@@ -1,23 +1,25 @@
 #!/usr/bin/python3
 
-# Add parser that takes command-line arguments in the
-# - input-format "<<{INPUT}" and in the
-# - output-format: ">>{OUTPUT}"
-# Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
-
-# Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
-
-# TODO 1. Add wrapper for subprocess.Popen
-# TODO 2. Add caching of stdout and stderr
-
-# TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
-# it to be relative.
-
-# TODO Should we allow `OutDirPath`?
-
-# TODO Check before execution if outputs in working directory are writable
-
-# TODO Should we allow `cache_dir` to be an instance of a specific `CacheDirPath('qac')`
+# TODOs in order of importance
+#
+# - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
+#
+# - TODO 1. Add wrapper for subprocess.Popen
+# - TODO 2. Add caching of stdout and stderr
+#
+# - TODO Either allow `ExecFilePath` must be copied to box if relative or forbid
+#   it to be relative.
+#
+# - TODO Should we allow `OutDirPath`?
+#
+# - TODO Check before execution if outputs in working directory are writable
+#
+# - TODO Should we allow `cache_dir` to be an instance of a specific `CacheDirPath('qac')`
+#
+# - TODO Add parser that takes command-line arguments in the
+#   - input-format "<<{INPUT}" and in the
+#   - output-format: ">>{OUTPUT}"
+#   Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
 
 import hashlib
 import os
