@@ -553,7 +553,7 @@ def isolated_call(typed_args,
 
         return exit_status
 
-HELLOW_WORLD_C_SOURCE = '''#include <stdio.h>
+HELLO_WORLD_C_SOURCE = '''#include <stdio.h>
 
 int f(int x) { return x*x; }
 
@@ -577,7 +577,7 @@ class TestAll(unittest.TestCase):
             out_su_file = OutFilePath('foo.su')
 
             with open(in_c_file.name, 'w') as f:
-                f.write(HELLOW_WORLD_C_SOURCE)
+                f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
             isolated_call(typed_args=[exec_file,
@@ -602,7 +602,7 @@ class TestAll(unittest.TestCase):
             out_su_file = OutFilePath('foo.su')
 
             with open(in_c_file.name, 'w') as f:
-                f.write(HELLOW_WORLD_C_SOURCE)
+                f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
             with self.assertRaises(Exception) as context:
@@ -632,7 +632,7 @@ class TestAll(unittest.TestCase):
             out_o_file = OutFilePath('foo.c')  # output same as input is an error
 
             with open(in_c_file.name, 'w') as f:
-                f.write(HELLOW_WORLD_C_SOURCE)
+                f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
             with self.assertRaises(Exception) as context:
