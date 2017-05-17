@@ -483,7 +483,7 @@ def isolated_call(typed_args,
         os.makedirs(cache_prefix_dir, exist_ok=True)
 
         cache_manifest_file = os.path.join(cache_prefix_dir,
-                                           hexdig + '.manifest')
+                                           hexdig + '-output.manifest')
 
         cache_artifacts_dir = os.path.join(cache_dir, 'artifacts', hash_name)  # this could be made a common parameter
         os.makedirs(cache_artifacts_dir, exist_ok=True)
