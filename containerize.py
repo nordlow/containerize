@@ -31,7 +31,6 @@ import shutil
 import stat
 import subprocess
 import tempfile
-import fileinput
 import logging
 import unittest
 
@@ -571,6 +570,7 @@ int main()
   return 0;
 }
 '''
+
 
 class TestAll(unittest.TestCase):
 
