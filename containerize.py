@@ -25,7 +25,12 @@
 import hashlib
 import os
 import os.path
-import pathlib                  # TODO use pathlib2 on Python 2
+
+try:
+    import pathlib              # Python 3
+except:
+    import pathlib2 as pathlib  # Python 2
+
 import shutil
 import stat
 import subprocess
