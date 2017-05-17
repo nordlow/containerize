@@ -1,15 +1,11 @@
 #!/usr/bin/python3
 
-# Throw exception for undeclared files in temp directory
-
 # Add parser that takes command-line arguments in the
 # - input-format "<<{INPUT}" and in the
 # - output-format: ">>{OUTPUT}"
 # Usage: containerize gcc -Wall -c '<{foo.c}' -o '>{foo.o}'
 
 # Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
-
-# Only write outputs if newer or content different
 
 # TODO 1. Add wrapper for subprocess.Popen
 # TODO 2. Add caching of stdout and stderr
