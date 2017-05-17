@@ -1,7 +1,5 @@
 #!/usr/bin/python3
 
-# TODO down assert that `out_dir_abspath` is empty after things have been moved
-
 # Throw exception for undeclared files in temp directory
 
 # Add parser that takes command-line arguments in the
@@ -505,10 +503,6 @@ def isolated_call(typed_args,
         # create top directory for temporary box files
         os.makedirs(temp_dir_abspath)
 
-        # NOTE keeping these because it's very useful when debugging file structure in container:
-        # import print_fs
-        # print_fs.print_tree(box_dir)
-
         # call in containerized read-only input directory
         os.chdir(in_dir_abspath)
         os.chmod(in_dir_abspath,
@@ -543,6 +537,16 @@ def isolated_call(typed_args,
             move_output_from_box(out_files=out_files,
                                  work_dir=work_dir,
                                  logger=top_logger)
+
+            # `out_dir_abspath` should be empty by now so rmdir should pass
+            try:
+                os.rmdir(out_dir_abspath)
+            except OSError as e:
+                if "Directory not empty" in str(e):
+                    raise Exception('Box output directory {} contain undeclared outputs {}'.format(out_dir_abspath,
+                                                                                                   str(os.listdir(out_dir_abspath))))
+                else:
+                    raise e
 
         # restore working directory
         os.chdir(work_dir)
@@ -585,9 +589,6 @@ class TestAll(unittest.TestCase):
             assert out_o_file.exists()
             assert out_su_file.exists()
 
-            # import print_fs
-            # print_fs.print_tree(box_dir)
-
         assert not os.path.exists(box_dir)
 
     def test_failing_undeclared_output_compilation(self):
@@ -598,19 +599,23 @@ class TestAll(unittest.TestCase):
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_c_file = InFilePath('foo.c')
             out_o_file = OutFilePath('foo.o')
+            out_su_file = OutFilePath('foo.su')
 
             with open(in_c_file.name, 'w') as f:
                 f.write(HELLOW_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            # with self.assertRaises(Exception) as context:
-            #     isolated_call(typed_args=[exec_file,
-            #                               '-fstack-usage',  # has undeclared side-effect output `foo.su`
-            #                               '-c', in_c_file,
-            #                               '-o', out_o_file])
+            with self.assertRaises(Exception) as context:
+                isolated_call(typed_args=[exec_file,
+                                          '-fstack-usage',  # has undeclared side-effect output `foo.su`
+                                          '-c', in_c_file,
+                                          '-o', out_o_file])
+            self.assertTrue("Box output directory" in str(context.exception) and
+                            "contain undeclared outputs ['foo.su']" in str(context.exception))
 
-            # assert out_o_file.exists()
-            # # assert out_su_file.exists()
+            # not output should be produced
+            assert not out_o_file.exists()
+            assert not out_su_file.exists()
 
             # import print_fs
             # print_fs.print_tree(box_dir)
