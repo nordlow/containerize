@@ -2,6 +2,8 @@
 
 # TODOs in order of importance
 #
+# - TODO install scandir on Python2
+#
 # - TODO Test population and modification of cache by setting to temporary directory inside unittest
 #
 # - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
@@ -35,11 +37,15 @@ except:
 
 import shutil
 import stat
+import sys
 import subprocess
 import tempfile
 import logging
 import unittest
 
+
+PY2 = sys.version_info[0] == 2
+PY3 = sys.version_info[0] == 3
 
 _SUCCESS = 0                    # default success exit status
 _FAILURE = 1                    # default failure exit status
@@ -55,6 +61,16 @@ ARTIFACTS_SUB_DIR_NAME = 'artifacts'
 MANIFEST_FIELD_SEPARATOR = ' '
 MANIFEST_FILE_EXTENSION = '.manifest'
 
+
+if PY3:
+    def _makedirs(path):
+        os.makedirs(path, exist_ok=True)
+else:
+    def _makedirs(path):
+        try:
+            os.makedirs(path)
+        except:
+            pass
 
 # needed for cache pruning
 def tree_files_sorted_by_recent_mtime(rootfolder, file_matcher=None):
@@ -242,11 +258,12 @@ def _try_load_from_cache(cache_manifest_file,
             manifest_map.pop(out_file_name, None)
         assert not manifest_map, "Output files {} didn't match contents of manifest file {}".format(out_files, cache_manifest_file)
         return True
-    except FileNotFoundError:
-        pass
-    except KeyError:
-        pass
-    return False
+    # except FileNotFoundError:
+    #     pass
+    # except KeyError:
+    #     pass
+    except:
+        return False
 
 
 def _atomic_link_or_copyfile(src, dst, logger):
@@ -268,7 +285,7 @@ def link_or_copy_input_to_box(work_dir, in_files,
     for in_file in in_files:
         boxed_in_dir = os.path.dirname(in_file.as_boxed())
         if boxed_in_dir:    # only if in_file.as_boxed() lies in a subdir
-            os.makedirs(boxed_in_dir, exist_ok=True)
+            os.makedirs(boxed_in_dir)
         _atomic_link_or_copyfile(src=os.path.join(work_dir,
                                                   in_file.as_unboxed()),
                                  dst=in_file.as_boxed(),
@@ -301,7 +318,7 @@ def create_out_dirs(out_files,
         if not out_file.is_absolute():
             out_file = str(out_file)
             box_out_file = os.path.join(out_dir_abspath, out_file)
-            os.makedirs(os.path.dirname(box_out_file), exist_ok=True)  # pre-create directory
+            _makedirs(os.path.dirname(box_out_file))  # pre-create directory
 
 
 def _strip_prefix(text, prefix):
@@ -350,6 +367,29 @@ def assert_disjunct_file_sets(in_files,
         raise Exception("Output files and temporary directories overlap for {}".format(out_temp_overlap_files))
 
 
+if PY3:                         # Python 3
+    def _make_tempdir():
+        return tempfile.TemporaryDirectory()
+else:
+    class CleanupFilesystemItems:
+        def __init__(self, *items):
+            self.items = items
+
+        def __enter__(self):
+            return self.items[0]
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            for item in self.items:
+                if os.path.exists(item):
+                    if os.path.isdir(item):
+                        shutil.rmtree(item)
+                    else:
+                        os.remove(item)
+
+    def _make_tempdir():
+        return CleanupFilesystemItems(tempfile.mkdtemp())
+
+
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
@@ -371,7 +411,7 @@ def isolated_call(typed_args,
         logger_dir = cache_dir
     else:
         logger_dir = os.path.join(_HOME_DIR, '.' + __name__)
-    os.makedirs(logger_dir, exist_ok=True)
+    _makedirs(logger_dir)
 
     # logging
     top_logger = logging.getLogger(__name__)
@@ -489,7 +529,7 @@ def isolated_call(typed_args,
                                           MANIFESTS_SUB_DIR_NAME,
                                           hexdig[0:2],
                                           hexdig[2:4])
-        os.makedirs(cache_manifest_dir, exist_ok=True)
+        _makedirs(cache_manifest_dir)
 
         cache_manifest_file = os.path.join(cache_manifest_dir,
                                            hexdig + '-output' + MANIFEST_FILE_EXTENSION)
@@ -497,7 +537,7 @@ def isolated_call(typed_args,
         cache_artifacts_dir = os.path.join(cache_dir,
                                            ARTIFACTS_SUB_DIR_NAME,
                                            hash_name)
-        os.makedirs(cache_artifacts_dir, exist_ok=True)
+        _makedirs(cache_artifacts_dir)
 
         if load_from_cache:
             if _try_load_from_cache(cache_manifest_file=cache_manifest_file,
@@ -507,7 +547,7 @@ def isolated_call(typed_args,
                 return _SUCCESS
 
     # within sandbox
-    with tempfile.TemporaryDirectory() as box_dir:
+    with _make_tempdir() as box_dir:
         in_dir_abspath = os.path.join(box_dir, in_subdir_name)
         out_dir_abspath = os.path.join(box_dir, out_subdir_name)
         temp_dir_abspath = os.path.join(box_dir, temp_subdir_name)
@@ -597,7 +637,7 @@ class TestAll(unittest.TestCase):
 
     def test_ok_gcc_compilation(self):
 
-        with tempfile.TemporaryDirectory() as box_dir:
+        with _make_tempdir() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
@@ -623,7 +663,7 @@ class TestAll(unittest.TestCase):
 
     def test_failing_undeclared_output_compilation(self):
 
-        with tempfile.TemporaryDirectory() as box_dir:
+        with _make_tempdir() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
@@ -654,7 +694,7 @@ class TestAll(unittest.TestCase):
 
     def test_failing_self_assigning_compilation(self):
 
-        with tempfile.TemporaryDirectory() as box_dir:
+        with _make_tempdir() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
