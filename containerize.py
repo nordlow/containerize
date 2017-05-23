@@ -70,6 +70,7 @@ else:
         except:
             pass
 
+
 # needed for cache pruning
 def tree_files_sorted_by_recent_mtime(rootfolder, file_matcher=None):
     return sorted((os.path.join(dirname, filename)
