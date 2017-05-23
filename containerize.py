@@ -2,8 +2,6 @@
 
 # TODOs in order of importance
 #
-# - TODO install scandir on Python2
-#
 # - TODO Test population and modification of cache by setting to temporary directory inside unittest
 #
 # - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
