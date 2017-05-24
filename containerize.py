@@ -5,8 +5,6 @@
 # - TODO Add docker deps for Python 2:
 #   - scandir, pathlib2, subprocess32
 #
-# - TODO Test population and modification of cache by setting to temporary directory inside unittest
-#
 # - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
 #
 # - TODO 1. Add wrapper for subprocess.Popen
@@ -656,15 +654,18 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            isolated_call(typed_args=[exec_file,
-                                      '-fstack-usage',  # has side-effect output `foo.su`
-                                      '-c', in_c_file,
-                                      '-o', out_o_file],
-                          side_effect_out_paths=[out_su_file],
-                          strip_box_in_dir_prefix=True)
+            with _make_tempdir() as cache_dir:
 
-            assert out_o_file.exists()
-            assert out_su_file.exists()
+                isolated_call(typed_args=[exec_file,
+                                          '-fstack-usage',  # has side-effect output `foo.su`
+                                          '-c', in_c_file,
+                                          '-o', out_o_file],
+                              cache_dir=cache_dir,
+                              side_effect_out_paths=[out_su_file],
+                              strip_box_in_dir_prefix=True)
+
+                assert out_o_file.exists()
+                assert out_su_file.exists()
 
         assert not os.path.exists(box_dir)
 
@@ -682,20 +683,23 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            with self.assertRaises(Exception) as context:
-                isolated_call(typed_args=[exec_file,
-                                          '-fstack-usage',  # has undeclared side-effect output `foo.su`
-                                          '-c', in_c_file,
-                                          '-o', out_o_file])
-            self.assertTrue("Box output directory" in str(context.exception) and
-                            "contain undeclared outputs ['foo.su']" in str(context.exception))
+            with _make_tempdir() as cache_dir:
 
-            # not output should be produced
-            assert not out_o_file.exists()
-            assert not out_su_file.exists()
+                with self.assertRaises(Exception) as context:
+                    isolated_call(typed_args=[exec_file,
+                                              '-fstack-usage',  # has undeclared side-effect output `foo.su`
+                                              '-c', in_c_file,
+                                              '-o', out_o_file],
+                                  cache_dir=cache_dir)
+                self.assertTrue("Box output directory" in str(context.exception) and
+                                "contain undeclared outputs ['foo.su']" in str(context.exception))
 
-            # import print_fs
-            # print_fs.print_tree(box_dir)
+                # not output should be produced
+                assert not out_o_file.exists()
+                assert not out_su_file.exists()
+
+                # import print_fs
+                # print_fs.print_tree(box_dir)
 
         assert not os.path.exists(box_dir)
 
@@ -712,12 +716,15 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            with self.assertRaises(Exception) as context:
-                isolated_call(typed_args=[exec_file,
-                                          '-c', in_c_file,
-                                          '-o', out_o_file])
+            with _make_tempdir() as cache_dir:
 
-            self.assertTrue("Input files and output files overlap for {'foo.c'}" in str(context.exception))
+                with self.assertRaises(Exception) as context:
+                    isolated_call(typed_args=[exec_file,
+                                              '-c', in_c_file,
+                                              '-o', out_o_file],
+                                  cache_dir=cache_dir)
+
+                self.assertTrue("Input files and output files overlap for {'foo.c'}" in str(context.exception))
 
         assert not os.path.exists(box_dir)
 
