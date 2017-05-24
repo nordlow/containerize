@@ -376,7 +376,7 @@ if PY3:                         # Python 3
     def _make_tempdir():
         return tempfile.TemporaryDirectory()
 else:
-    import subprocess32
+    import subprocess32         # Python 2: pip install subprocess32
     subprocess_call = subprocess32.call
     class TemporaryDirectory:
         def __init__(self):
