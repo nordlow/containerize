@@ -270,7 +270,7 @@ def _try_load_from_cache(cache_manifest_file,
 
 def _atomic_link_or_copyfile(src, dst, logger):
     try:                        # first try
-        os.link(src,dst)        # hardlink
+        os.link(src, dst)       # hardlink
     except Exception:               # and if that fails
         _atomic_copyfile(src=src,   # do plain copy
                          dst=dst,
@@ -344,9 +344,11 @@ def _strip_prefix_from_out_file_contents(out_files, prefix):
                 os.remove(fixed_out_h.name)
                 pass
 
+
 class Names(set):
     def __str__(self):
         return "{%s}" % ", ".join(map(repr, self))
+
 
 def assert_disjunct_file_sets(in_files,
                               out_files,
@@ -373,11 +375,13 @@ def assert_disjunct_file_sets(in_files,
 
 if PY3:                         # Python 3
     subprocess_call = subprocess.call
+
     def _make_tempdir():
         return tempfile.TemporaryDirectory()
 else:
     import subprocess32         # Python 2: pip install subprocess32
     subprocess_call = subprocess32.call
+
     class TemporaryDirectory:
         def __init__(self):
             self.dir = tempfile.mkdtemp()
