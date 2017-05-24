@@ -2,6 +2,9 @@
 
 # TODOs in order of importance
 #
+# - TODO Add docker deps for Python 2:
+#   - scandir, pathlib2, subprocess32
+#
 # - TODO Test population and modification of cache by setting to temporary directory inside unittest
 #
 # - TODO Write file to calls/xx/yy/xxyy... .txt with contents FILENAME MTIME HASH
@@ -267,10 +270,9 @@ def _try_load_from_cache(cache_manifest_file,
 
 def _atomic_link_or_copyfile(src, dst, logger):
     try:                        # first try
-        os.link(src=src,        # hardlink
-                dst=dst)
-    except Exception:             # and if that fails
-        _atomic_copyfile(src=src,  # do plain copy
+        os.link(src,dst)        # hardlink
+    except Exception:               # and if that fails
+        _atomic_copyfile(src=src,   # do plain copy
                          dst=dst,
                          overwrite=True,
                          logger=logger)
@@ -342,6 +344,9 @@ def _strip_prefix_from_out_file_contents(out_files, prefix):
                 os.remove(fixed_out_h.name)
                 pass
 
+class Names(set):
+    def __str__(self):
+        return "{%s}" % ", ".join(map(repr, self))
 
 def assert_disjunct_file_sets(in_files,
                               out_files,
@@ -349,9 +354,9 @@ def assert_disjunct_file_sets(in_files,
     '''Assert that IN_FILES, OUT_FILES and TEMP_DIRS have all disjunct names.'''
 
     # TODO can these conversions be optimized?
-    in_file_names = set(map(str, in_files))
-    out_file_names = set(map(str, out_files))
-    temp_dir_names = set(map(str, temp_dirs))
+    in_file_names = Names(map(str, in_files))
+    out_file_names = Names(map(str, out_files))
+    temp_dir_names = Names(map(str, temp_dirs))
 
     in_out_overlap_files = in_file_names & out_file_names
     if in_out_overlap_files:
@@ -367,26 +372,25 @@ def assert_disjunct_file_sets(in_files,
 
 
 if PY3:                         # Python 3
+    subprocess_call = subprocess.call
     def _make_tempdir():
         return tempfile.TemporaryDirectory()
 else:
-    class CleanupFilesystemItems:
-        def __init__(self, *items):
-            self.items = items
+    import subprocess32
+    subprocess_call = subprocess32.call
+    class TemporaryDirectory:
+        def __init__(self):
+            self.dir = tempfile.mkdtemp()
 
         def __enter__(self):
-            return self.items[0]
+            return self.dir
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            for item in self.items:
-                if os.path.exists(item):
-                    if os.path.isdir(item):
-                        shutil.rmtree(item)
-                    else:
-                        os.remove(item)
+            if os.path.exists(self.dir):
+                shutil.rmtree(self.dir)
 
     def _make_tempdir():
-        return CleanupFilesystemItems(tempfile.mkdtemp())
+        return TemporaryDirectory()
 
 
 def isolated_call(typed_args,
@@ -394,7 +398,7 @@ def isolated_call(typed_args,
                   extra_inputs=None,
                   side_effect_out_paths=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
-                  call=subprocess.call,
+                  call=subprocess_call,
                   hash_name=_DEFAULT_HASH_NAME,
                   shell=False,
                   timeout=None,
