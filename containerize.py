@@ -374,8 +374,7 @@ def assert_disjunct_file_sets(in_files,
 if PY3:                         # Python 3
     subprocess_call = subprocess.call
 
-    def _make_tempdir():
-        return tempfile.TemporaryDirectory()
+    from tempfile import TemporaryDirectory
 else:
     import subprocess32         # Python 2: pip install subprocess32
     subprocess_call = subprocess32.call
@@ -391,14 +390,11 @@ else:
             if os.path.exists(self.dir):
                 shutil.rmtree(self.dir)
 
-    def _make_tempdir():
-        return TemporaryDirectory()
-
 
 def isolated_call(typed_args,
                   typed_env=None,
                   extra_inputs=None,
-                  side_effect_out_paths=None,
+                  extra_outputs=None,
                   cache_dir=_DEFAULT_CACHE_DIR,
                   call=subprocess_call,
                   hash_name=_DEFAULT_HASH_NAME,
@@ -499,8 +495,8 @@ def isolated_call(typed_args,
                                         type(extra_input)))
 
     # hash extra output strings and paths
-    if side_effect_out_paths is not None:
-        for out_path in side_effect_out_paths:
+    if extra_outputs is not None:
+        for out_path in extra_outputs:
             if isinstance(out_path, OutFilePath):
                 out_files.add(out_path)
             else:
@@ -552,7 +548,7 @@ def isolated_call(typed_args,
                 return _SUCCESS
 
     # within sandbox
-    with _make_tempdir() as box_dir:
+    with TemporaryDirectory() as box_dir:
         in_dir_abspath = os.path.join(box_dir, in_subdir_name)
         out_dir_abspath = os.path.join(box_dir, out_subdir_name)
         temp_dir_abspath = os.path.join(box_dir, temp_subdir_name)
@@ -642,7 +638,7 @@ class TestAll(unittest.TestCase):
 
     def test_ok_gcc_compilation(self):
 
-        with _make_tempdir() as box_dir:
+        with TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
@@ -654,14 +650,14 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            with _make_tempdir() as cache_dir:
+            with TemporaryDirectory() as cache_dir:
 
                 isolated_call(typed_args=[exec_file,
                                           '-fstack-usage',  # has side-effect output `foo.su`
                                           '-c', in_c_file,
                                           '-o', out_o_file],
                               cache_dir=cache_dir,
-                              side_effect_out_paths=[out_su_file],
+                              extra_outputs=[out_su_file],
                               strip_box_in_dir_prefix=True)
 
                 assert out_o_file.exists()
@@ -671,7 +667,7 @@ class TestAll(unittest.TestCase):
 
     def test_failing_undeclared_output_compilation(self):
 
-        with _make_tempdir() as box_dir:
+        with TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
@@ -683,7 +679,7 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            with _make_tempdir() as cache_dir:
+            with TemporaryDirectory() as cache_dir:
 
                 with self.assertRaises(Exception) as context:
                     isolated_call(typed_args=[exec_file,
@@ -705,7 +701,7 @@ class TestAll(unittest.TestCase):
 
     def test_failing_self_assigning_compilation(self):
 
-        with _make_tempdir() as box_dir:
+        with TemporaryDirectory() as box_dir:
             os.chdir(box_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
@@ -716,7 +712,7 @@ class TestAll(unittest.TestCase):
                 f.write(HELLO_WORLD_C_SOURCE)
             assert in_c_file.exists()
 
-            with _make_tempdir() as cache_dir:
+            with TemporaryDirectory() as cache_dir:
 
                 with self.assertRaises(Exception) as context:
                     isolated_call(typed_args=[exec_file,
