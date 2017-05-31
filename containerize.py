@@ -611,8 +611,8 @@ def isolated_call(typed_args,
                 os.rmdir(out_dir_abspath)
             except OSError as e:
                 if "Directory not empty" in str(e):
-                    raise Exception('Box output directory {} contain undeclared outputs {}'.format(out_dir_abspath,
-                                                                                                   str(os.listdir(out_dir_abspath))))
+                    raise Exception('Box output directory {} contains undeclared outputs {}'.format(out_dir_abspath,
+                                                                                                    str(os.listdir(out_dir_abspath))))
                 else:
                     raise e
 
