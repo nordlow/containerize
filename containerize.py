@@ -55,6 +55,7 @@ _HOME_DIR = os.path.expanduser('~')
 _DEFAULT_CACHE_DIR = os.path.join(_HOME_DIR, '.cache', __name__)
 
 MANIFESTS_SUB_DIR_NAME = 'manifests'
+MANIFESTS_SUB_HASH_PREFIX_LENGTH = 2
 ARTIFACTS_SUB_DIR_NAME = 'artifacts'
 
 MANIFEST_FIELD_SEPARATOR = ' '
@@ -528,7 +529,7 @@ def isolated_call(typed_args,
 
         cache_manifest_dir = os.path.join(cache_dir,
                                           MANIFESTS_SUB_DIR_NAME,
-                                          hexdig[0:2])
+                                          hexdig[0:MANIFESTS_SUB_HASH_PREFIX_LENGTH])
         _makedirs(cache_manifest_dir)
 
         cache_manifest_file = os.path.join(cache_manifest_dir,
