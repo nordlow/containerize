@@ -528,8 +528,7 @@ def isolated_call(typed_args,
 
         cache_manifest_dir = os.path.join(cache_dir,
                                           MANIFESTS_SUB_DIR_NAME,
-                                          hexdig[0:2],
-                                          hexdig[2:4])
+                                          hexdig[0:2])
         _makedirs(cache_manifest_dir)
 
         cache_manifest_file = os.path.join(cache_manifest_dir,
