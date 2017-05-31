@@ -666,15 +666,14 @@ class TestAll(unittest.TestCase):
                 assert out_su_file.exists()
 
                 # assert cache contents
+                cache_artifacts_dir = os.path.join(cache_dir,
+                                                   'artifacts',
+                                                   _DEFAULT_HASH_NAME)
+                assert len(os.listdir(cache_artifacts_dir)) == 2
                 for cache_hash in ['31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6',
                                  'ff5652505ce50ac66612d7fd6358110ec2f55f1d5634fd6f4f926abdc159c12d']:
-                    assert os.path.exists(os.path.join(cache_dir,
-                                                       'artifacts',
-                                                       _DEFAULT_HASH_NAME,
+                    assert os.path.exists(os.path.join(cache_artifacts_dir,
                                                        cache_hash))
-
-                import print_fs
-                print_fs.print_tree(cache_dir)
 
         assert not os.path.exists(temp_work_dir)
 
@@ -709,14 +708,16 @@ class TestAll(unittest.TestCase):
                 assert not out_su_file.exists()
 
                 # assert cache contents
+                cache_artifacts_dir = os.path.join(cache_dir,
+                                                   'artifacts',
+                                                   _DEFAULT_HASH_NAME)
+                assert len(os.listdir(cache_artifacts_dir)) == 1
                 for cache_hash in ['31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6']:
-                    assert os.path.exists(os.path.join(cache_dir,
-                                                       'artifacts',
-                                                       _DEFAULT_HASH_NAME,
+                    assert os.path.exists(os.path.join(cache_artifacts_dir,
                                                        cache_hash))
 
-                # import print_fs
-                # print_fs.print_tree(cache_dir)
+                import print_fs
+                print_fs.print_tree(cache_dir)
 
         assert not os.path.exists(temp_work_dir)
 
