@@ -56,6 +56,7 @@ _DEFAULT_CACHE_DIR = os.path.join(_HOME_DIR, '.cache', __name__)
 
 MANIFESTS_SUB_DIR_NAME = 'manifests'
 MANIFESTS_SUB_HASH_PREFIX_LENGTH = 2
+
 ARTIFACTS_SUB_DIR_NAME = 'artifacts'
 
 MANIFEST_FIELD_SEPARATOR = ' '
