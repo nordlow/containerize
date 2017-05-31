@@ -703,8 +703,8 @@ class TestAll(unittest.TestCase):
                 assert not out_o_file.exists()
                 assert not out_su_file.exists()
 
-                import print_fs
-                print_fs.print_tree(cache_dir)
+                # import print_fs
+                # print_fs.print_tree(cache_dir)
 
                 # assert cache contents
                 cache_artifacts_dir = os.path.join(cache_dir,
