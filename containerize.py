@@ -658,10 +658,22 @@ class TestAll(unittest.TestCase):
                                           '-o', out_o_file],
                               cache_dir=cache_dir,
                               extra_outputs=[out_su_file],
-                              strip_box_in_dir_prefix=True)
+                              strip_box_in_dir_prefix=True,
+                              hash_name='sha256')
 
                 assert out_o_file.exists()
                 assert out_su_file.exists()
+
+                # assert cache contents
+                for cache_hash in ['31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6',
+                                 'ff5652505ce50ac66612d7fd6358110ec2f55f1d5634fd6f4f926abdc159c12d']:
+                    assert os.path.exists(os.path.join(cache_dir,
+                                                       'artifacts',
+                                                       _DEFAULT_HASH_NAME,
+                                                       cache_hash))
+
+                import print_fs
+                print_fs.print_tree(cache_dir)
 
         assert not os.path.exists(temp_work_dir)
 
@@ -695,10 +707,12 @@ class TestAll(unittest.TestCase):
                 assert not out_o_file.exists()
                 assert not out_su_file.exists()
 
-                assert os.path.exists(os.path.join(cache_dir,
-                                                   'artifacts',
-                                                   _DEFAULT_HASH_NAME,
-                                                   '31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6'))
+                # assert cache contents
+                for cache_hash in ['31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6']:
+                    assert os.path.exists(os.path.join(cache_dir,
+                                                       'artifacts',
+                                                       _DEFAULT_HASH_NAME,
+                                                       cache_hash))
 
                 # import print_fs
                 # print_fs.print_tree(cache_dir)
