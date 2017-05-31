@@ -671,6 +671,25 @@ class TestAll(unittest.TestCase):
                                                    _DEFAULT_HASH_NAME)
                 assert len(os.listdir(cache_artifacts_dir)) == 2
 
+                # same call again
+                isolated_call(typed_args=[exec_file,
+                                          '-fstack-usage',  # has side-effect output `foo.su`
+                                          '-c', in_c_file,
+                                          '-o', out_o_file],
+                              cache_dir=cache_dir,
+                              extra_outputs=[out_su_file],
+                              strip_box_in_dir_prefix=True,
+                              hash_name='sha256')
+
+                assert out_o_file.exists()
+                assert out_su_file.exists()
+
+                # size of cache shouldn't change
+                cache_artifacts_dir = os.path.join(cache_dir,
+                                                   'artifacts',
+                                                   _DEFAULT_HASH_NAME)
+                assert len(os.listdir(cache_artifacts_dir)) == 2
+
         assert not os.path.exists(temp_work_dir)
 
     def test_failing_undeclared_output_compilation(self):
