@@ -638,8 +638,8 @@ class TestAll(unittest.TestCase):
 
     def test_ok_gcc_compilation(self):
 
-        with TemporaryDirectory() as box_dir:
-            os.chdir(box_dir)
+        with TemporaryDirectory() as temp_work_dir:
+            os.chdir(temp_work_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_c_file = InFilePath('foo.c')
@@ -663,12 +663,12 @@ class TestAll(unittest.TestCase):
                 assert out_o_file.exists()
                 assert out_su_file.exists()
 
-        assert not os.path.exists(box_dir)
+        assert not os.path.exists(temp_work_dir)
 
     def test_failing_undeclared_output_compilation(self):
 
-        with TemporaryDirectory() as box_dir:
-            os.chdir(box_dir)
+        with TemporaryDirectory() as temp_work_dir:
+            os.chdir(temp_work_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_c_file = InFilePath('foo.c')
@@ -695,14 +695,14 @@ class TestAll(unittest.TestCase):
                 assert not out_su_file.exists()
 
                 # import print_fs
-                # print_fs.print_tree(box_dir)
+                # print_fs.print_tree(temp_work_dir)
 
-        assert not os.path.exists(box_dir)
+        assert not os.path.exists(temp_work_dir)
 
     def test_failing_self_assigning_compilation(self):
 
-        with TemporaryDirectory() as box_dir:
-            os.chdir(box_dir)
+        with TemporaryDirectory() as temp_work_dir:
+            os.chdir(temp_work_dir)
 
             exec_file = ExecFilePath('/usr/bin/gcc')
             in_c_file = InFilePath('foo.c')
@@ -722,7 +722,7 @@ class TestAll(unittest.TestCase):
 
                 self.assertTrue("Input files and output files overlap for {'foo.c'}" in str(context.exception))
 
-        assert not os.path.exists(box_dir)
+        assert not os.path.exists(temp_work_dir)
 
 
 if __name__ == '__main__':
