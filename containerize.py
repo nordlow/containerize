@@ -701,7 +701,7 @@ class TestAll(unittest.TestCase):
                                   cache_dir=cache_dir,
                                   hash_name='sha256')
                 self.assertTrue("Box output directory" in str(context.exception) and
-                                "contain undeclared outputs ['foo.su']" in str(context.exception))
+                                "contains undeclared outputs ['foo.su']" in str(context.exception))
 
                 # no output should be produced
                 assert not out_o_file.exists()
