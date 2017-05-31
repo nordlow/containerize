@@ -742,6 +742,12 @@ class TestAll(unittest.TestCase):
                                               '-o', out_o_file],
                                   cache_dir=cache_dir)
 
+                # assert empty cache
+                cache_artifacts_dir = os.path.join(cache_dir,
+                                                   'artifacts',
+                                                   _DEFAULT_HASH_NAME)
+                assert not os.path.exists(cache_artifacts_dir)
+
                 self.assertTrue("Input files and output files overlap for {'foo.c'}" in str(context.exception))
 
         assert not os.path.exists(temp_work_dir)
