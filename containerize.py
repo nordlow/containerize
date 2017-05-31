@@ -686,16 +686,22 @@ class TestAll(unittest.TestCase):
                                               '-fstack-usage',  # has undeclared side-effect output `foo.su`
                                               '-c', in_c_file,
                                               '-o', out_o_file],
-                                  cache_dir=cache_dir)
+                                  cache_dir=cache_dir,
+                                  hash_name='sha256')
                 self.assertTrue("Box output directory" in str(context.exception) and
                                 "contain undeclared outputs ['foo.su']" in str(context.exception))
 
-                # not output should be produced
+                # no output should be produced
                 assert not out_o_file.exists()
                 assert not out_su_file.exists()
 
+                assert os.path.exists(os.path.join(cache_dir,
+                                                   'artifacts',
+                                                   _DEFAULT_HASH_NAME,
+                                                   '31e7d55a699ad8976bcf3217811b20c66ff22a71a6fefd075e0817749479fca6'))
+
                 # import print_fs
-                # print_fs.print_tree(temp_work_dir)
+                # print_fs.print_tree(cache_dir)
 
         assert not os.path.exists(temp_work_dir)
 
