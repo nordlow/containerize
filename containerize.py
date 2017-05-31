@@ -236,7 +236,7 @@ def _try_load_from_cache(cache_manifest_file,
         with open(cache_manifest_file, 'r') as manifest_handle:
             for line in manifest_handle:
                 entries = line.rstrip('\n').split(MANIFEST_FIELD_SEPARATOR)
-                manifest_map[entries[2]] = tuple(entries[0:2])
+                manifest_map[entries[2]] = tuple(entries[0:MANIFESTS_SUB_HASH_PREFIX_LENGTH])
 
         for out_file in out_files:
             assert isinstance(out_file, OutFilePath)
